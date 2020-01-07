@@ -5,17 +5,17 @@ export merge, ==
 """
     merge(cons::Array{SeisCon,1})
 
-Merge the elements of `con`, a vector of SeisCon objects, into one SeisCon object. 
+Merge the elements of `con`, a vector of SeisCon objects, into one SeisCon object.
 """
 function merge(cons::Array{SeisCon,1})
-    
+
     # Check similar metadata
     ns = get_confield(cons, :ns)
     dsf = get_confield(cons, :dsf)
 
     if all(ns.==ns[1]) && all(dsf.==dsf[1])
         d = [cons[i].blocks for i in 1:length(cons)]
-        return SeisCon(ns[1], dsf[1], vcat(d...))
+        return SeisCon(ns[1], dsf[1], vcat(d...), cons[1].fileheader)
     else
         @error "Dissimilar metadata, cannot merge"
     end
@@ -36,7 +36,7 @@ Merge two SeisBlocks into one.
 """
 function merge(a::SeisBlock{DT}, b::SeisBlock{DT};
                force::Bool = false, consume::Bool = false) where {DT<:Union{IBMFloat32, Float32}}
-   merge([a; b], force = force, consume = consume) 
+   merge([a; b], force = force, consume = consume)
 end
 
 """
@@ -48,14 +48,14 @@ Merge `blocks`, a vector of `SeisBlock` objects into one `SeisBlock` object.
 By default, `merge` checks to ensure that each `SeisBlock` has matching fileheaders. This ensures
 that the returned `SeisBlock` is consistant with it's fileheader. This check can be turned off
 using the `force` keyword. If set to false, `merge` will attempt to combine `blocks` without
-checking fileheader metadata. The first fileheader in `blocks` will be used for the  returned 
-`SeisBlock`'s fileheader. 
+checking fileheader metadata. The first fileheader in `blocks` will be used for the  returned
+`SeisBlock`'s fileheader.
 
-By default, `merge` references traceheaders, but copies data from the elements of `blocks`. 
-If memory use is a concern, the `consume` keyword will clear the traceheader and data field of each 
+By default, `merge` references traceheaders, but copies data from the elements of `blocks`.
+If memory use is a concern, the `consume` keyword will clear the traceheader and data field of each
 element of `block` after it has been copied. This will prevent duplicating the data in memory,
 at the cost of clearing the elements of `blocks`.
-    
+
 # Examples
 
     julia> s = segy_scan(joinpath(dirname(pathof(SegyIO)),"data/"), "overthrust", ["GroupX"; "GroupY"], verbosity = 0);

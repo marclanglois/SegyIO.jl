@@ -23,7 +23,7 @@ true
 ```
 """
 function split(s::SeisCon, inds::Union{Vector{Ti}, AbstractRange{Ti}}) where {Ti<:Integer}
-    c = SeisCon(s.ns, s.dsf, view(s.blocks, inds)) 
+    c = SeisCon(s.ns, s.dsf, view(s.blocks, inds), s.fileheader)
 end
 
 split(s::SeisCon, inds::Integer) = split(s, [inds])
@@ -34,7 +34,7 @@ split(s::SeisCon, inds::Integer) = split(s, [inds])
 
 Split the 'ind' traces of `s` into a sepretate `SeisBlock` object.
 
-The default behaviour does not change the input object `s`. The returned `SeisBlock` is 
+The default behaviour does not change the input object `s`. The returned `SeisBlock` is
 created by referencing the traceheaders of `s`, and copying the subset of the data.
 
 If memory use is a concern, the `consume` keyword changes the behaviour of `merge`.
@@ -77,14 +77,14 @@ memory allocation, and risk.
 function split(s::SeisBlock, inds::Union{Vector{Ti}, AbstractRange{Ti}};
                consume::Bool = false) where {Ti<:Integer}
     if consume
-        c = SeisBlock(s.fileheader, s.traceheaders[inds], s.data[:, inds]) 
+        c = SeisBlock(s.fileheader, s.traceheaders[inds], s.data[:, inds])
         ii = BitArray(size(s.data))
         ii[:, inds] = true
         deleteat!(vec(s.data), vec(ii))
         deleteat!(s.traceheaders, inds)
         s.data = s.data[:, 1:end-length(inds)]
     else
-        c = SeisBlock(s.fileheader, view(s.traceheaders, inds), s.data[:, inds]) 
+        c = SeisBlock(s.fileheader, view(s.traceheaders, inds), s.data[:, inds])
     end
 
     return c

@@ -18,15 +18,15 @@ function get_header(block::SeisBlock, name_in::Union{Symbol, String}; scale::Boo
     for i in 1:ntraces
         out[i] = getfield(block.traceheaders[i], name)
     end
-    
+
     # Check, and apply scaling
-    is_scalable, scale_name = check_scale(name) 
+    is_scalable, scale_name = check_scale(name)
     if scale && is_scalable
         scaling_factor = get_header(block, scale_name)
         out = Float64.(out)
         for ii in 1:ntraces
             fact = scaling_factor[ii]
-            fact > 0 ? out[ii] *= fact : out[ii] /= abs(fact) 
+            fact > 0 ? out[ii] *= fact : out[ii] /= abs(fact)
         end
     end
 
@@ -46,30 +46,48 @@ function check_scale(sym::Symbol)
     el = false
     scale_name = :Null
 
-    recsrc_str = "SourceX 
+#=
+# Marc: Causes "CDP" to be scaled since it matches "CDPX".
+    recsrc_str = "SourceX
             SourceY
             GroupX
             GroupY
             CDPX
             CDPY"
 
-    el_str = " RecGroupElevation            
-          SourceSurfaceElevation       
-          SourceDepth                  
-          RecDatumElevation            
-          SourceDatumElevation         
-          SourceWaterDepth             
+    el_str = " RecGroupElevation
+          SourceSurfaceElevation
+          SourceDepth
+          RecDatumElevation
+          SourceDatumElevation
+          SourceWaterDepth
           GroupWaterDepth"
 
-    if occursin(String(sym), recsrc_str) 
+    if occursin(String(sym), recsrc_str)
         recsrc = true
         scale_name = :RecSourceScalar
-    elseif occursin(String(sym), el_str) 
+    elseif occursin(String(sym), el_str)
         el = true
         scale_name = :ElevationScalar
     end
 
-    return (recsrc||el), scale_name     
+=#
+    recsrc_str = ("SourceX", "SourceY",
+                  "GroupX", "GroupY",
+                  "CDPX", "CDPY")
+    el_str = ("RecGroupElevation", "SourceSurfaceElevation",
+              "SourceDepth", "RecDatumElevation", "SourceDatumElevation",
+              "SourceWaterDepth", "GroupWaterDepth")
+
+    if String(sym) in recsrc_str
+        recsrc = true
+        scale_name = :RecSourceScalar
+    elseif String(sym) in el_str
+        el = true
+        scale_name = :ElevationScalar
+    end
+
+    return (recsrc||el), scale_name
 end
 
 """
@@ -79,7 +97,7 @@ Gets the metadata summary, `name`, from every `BlockScan` in `con`.
 Column 1 contains the minimum value of `name` within the block, and Column 2
 contains the maximum value of `name` within the block. Src/Rec scaling is not applied.
 
-To get source coordinate pairs as an array, see `get_sources`. 
+To get source coordinate pairs as an array, see `get_sources`.
 
 # Example
 
@@ -94,6 +112,6 @@ function get_header(con::SeisCon,name::String)
         vals[i,1] = minmax[i][1]
         vals[i,2] = minmax[i][2]
     end
-    
+
     return vals
 end
