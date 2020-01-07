@@ -7,22 +7,33 @@ struct SeisCon
     ns::Int
     dsf::Int
     blocks::Array{BlockScan,1}
+    fileheader::FileHeader # original FH read from file.
+end
+
+# Create SeisCon with empty FileHeader.
+function SeisCon(ns::Number, dsf::Number, blocks::Array{BlockScan,1})
+    fh = FileHeader()
+    fh.bfh.ns = ns
+    fh.bfh.DataSampleFormat = dsf
+    SeisCon(ns, dsf, blocks, fh)
 end
 
 size(con::SeisCon) = size(con.blocks)
 length(con::SeisCon) = length(con.blocks)
 
-function getindex(con::SeisCon, a::TA) where {TA<:Union{Array{<:Integer,1}, AbstractRange, Integer}} 
+function getindex(con::SeisCon,
+                  a::TA where {TA<:Union{Array{<:Integer,1},
+                               AbstractRange, Integer}})
     read_con(con, a)
 end
 
-function getindex(con::SeisCon, a::Colon) 
+function getindex(con::SeisCon, a::Colon)
     read_con(con, 1:length(con))
 end
 
 #=
 function show(s::SeisCon)
-   
+
     nblocks = length(s)
     for block in in 1:n_blocks
         #file = s.blocks[block].file
@@ -33,7 +44,7 @@ function show(s::SeisCon)
         println(s)
     end
     println("\n")
-    
+
 end
 =#
 
@@ -43,10 +54,10 @@ end
 """
     merge_cons(cons::Array{SeisCon,1})
 
-Merge `con`, a vector of SeisCon objects, into one SeisCon object. 
+Merge `con`, a vector of SeisCon objects, into one SeisCon object.
 """
 function merge_con(cons::Array{SeisCon,1})
-    
+
     @warn "merge_con is deprecated, use merge"
 
     # Check similar metadata
@@ -104,7 +115,7 @@ true
 """
 function split_con(s::SeisCon, inds::Union{Vector{Ti}, AbstractRange{Ti}}) where {Ti<:Integer}
     @warn "split_con is deprecated, use split"
-    c = SeisCon(s.ns, s.dsf, view(s.blocks, inds)) 
+    c = SeisCon(s.ns, s.dsf, view(s.blocks, inds))
 end
 
 split_con(s::SeisCon, inds::Integer) = split_con(s, [inds])

@@ -10,3 +10,6 @@ function show(io::IO, fh::FileHeader)
 end
 
 FileHeader() = FileHeader(" "^3200, BinaryFileHeader())
+FileHeader(fh::FileHeader) = FileHeader(fh.th, BinaryFileHeader(fh.bfh))
+FileHeader(bfh::BinaryFileHeader) =
+    FileHeader(" "^3200, BinaryFileHeader(fh.bfh))

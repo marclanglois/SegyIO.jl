@@ -40,6 +40,15 @@ function BinaryFileHeader()
    BinaryFileHeader(0,0,0,0,0,0,0,0,0,0,
                     0,0,0,0,0,0,0,0,0,0,
                     0,0,0,0,0,0,0,0,0,0)
+end
+
+# Copy constructor.
+function BinaryFileHeader(bfh::BinaryFileHeader)
+   bfhnew = BinaryFileHeader()
+   for fld in fieldnames(BinaryFileHeader)
+       setfield!(bfhnew, fld, getfield(bfh, fld))
+   end
+   return bfhnew
 
 end
 
@@ -79,7 +88,7 @@ function fh_byte2sample()
 end
 
 function show(io::IO, bfh::BinaryFileHeader)
-    
+
     println("BinaryFileHeader:")
 
     for field in fieldnames(BinaryFileHeader)
