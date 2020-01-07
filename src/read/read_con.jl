@@ -1,7 +1,7 @@
 export read_con
 
 """
-Use:   read_con(con::SeisCon; 
+Use:   read_con(con::SeisCon;
                 blocks::Array{Int,1} = Array(1:length(con)),
                 prealloc_traces::Int = 50000)
 
@@ -9,7 +9,7 @@ Read 'blocks' out of 'con' into a preallocated array of size (ns x prealloc_trac
 
 If preallocated memory fills, it will be expanded again by 'prealloc_traces'.
 """
-function read_con(con::SeisCon, blocks::Array{Int,1}; 
+function read_con(con::SeisCon, blocks::Array{Int,1};
                                 prealloc_traces::Int = 50000)
     nblocks = length(blocks)
     if maximum(blocks)>length(con) @error "Call for block $(maximum(blocks)) in a container with $(length(con)) blocks." end
@@ -23,15 +23,17 @@ function read_con(con::SeisCon, blocks::Array{Int,1};
     end
 
     # Pre-allocate
-    data = Array{datatype,2}(undef, con.ns, prealloc_traces) 
-    headers = Array{BinaryTraceHeader,1}(undef, prealloc_traces) 
-    fh = FileHeader(); set_fileheader!(fh.bfh, :ns, con.ns)
+    data = Array{datatype,2}(undef, con.ns, prealloc_traces)
+    headers = Array{BinaryTraceHeader,1}(undef, prealloc_traces)
+    # Copy FileHeader in SeisCon.
+    fh = FileHeader(con.fileheader)
+    set_fileheader!(fh.bfh, :ns, con.ns)
     set_fileheader!(fh.bfh, :DataSampleFormat, con.dsf)
 
     trace_count = 0
     # Read all blocks
     for block in blocks
-        
+
         # Check size of next block and pass view to pre-alloc
         brange = con.blocks[block].endbyte - con.blocks[block].startbyte
         ntraces = Int((brange)/(240 + con.ns*4))
@@ -45,7 +47,7 @@ function read_con(con::SeisCon, blocks::Array{Int,1};
             append!(headers, Array{BinaryTraceHeader,1}(undef, ntraces+prealloc_traces))
         end
         tmp_data = view(data, :,(trace_count+1):(trace_count+ntraces))
-        tmp_headers = view(headers, (trace_count+1):(trace_count+ntraces)) 
+        tmp_headers = view(headers, (trace_count+1):(trace_count+ntraces))
 
         # Read the next block
         read_block!(con.blocks[block], con.ns, con.dsf, tmp_data, tmp_headers)
@@ -53,7 +55,7 @@ function read_con(con::SeisCon, blocks::Array{Int,1};
     end
 
     return SeisBlock{datatype}(fh, headers[1:trace_count], data[:,1:trace_count])
-    
+
 end
 
 function read_con(con::SeisCon, keys::Array{String,1}, blocks::Array{Int,1};
@@ -72,15 +74,15 @@ function read_con(con::SeisCon, keys::Array{String,1}, blocks::Array{Int,1};
     in("RecSourceScalar", keys) ? nothing : push!(keys, "RecSourceScalar")
 
     # Pre-allocate
-    data = Array{datatype,2}(undef, con.ns, prealloc_traces) 
-    headers = Array{BinaryTraceHeader,1}(undef, prealloc_traces) 
+    data = Array{datatype,2}(undef, con.ns, prealloc_traces)
+    headers = Array{BinaryTraceHeader,1}(undef, prealloc_traces)
     fh = FileHeader(); set_fileheader!(fh.bfh, :ns, con.ns)
     set_fileheader!(fh.bfh, :DataSampleFormat, con.dsf)
 
     trace_count = 0
     # Read all blocks
     for block in blocks
-        
+
         # Check size of next block and pass view to pre-alloc
         brange = con.blocks[block].endbyte - con.blocks[block].startbyte
         ntraces = Int((brange)/(240 + con.ns*4))
@@ -94,7 +96,7 @@ function read_con(con::SeisCon, keys::Array{String,1}, blocks::Array{Int,1};
             prealloc_traces *= 2
         end
         tmp_data = view(data, :,(trace_count+1):(trace_count+ntraces))
-        tmp_headers = view(headers, (trace_count+1):(trace_count+ntraces)) 
+        tmp_headers = view(headers, (trace_count+1):(trace_count+ntraces))
 
         # Read the next block
         read_block!(con.blocks[block], keys, con.ns, con.dsf, tmp_data, tmp_headers)
@@ -102,7 +104,7 @@ function read_con(con::SeisCon, keys::Array{String,1}, blocks::Array{Int,1};
     end
 
     return SeisBlock{datatype}(fh, headers[1:trace_count], data[:,1:trace_count])
-    
+
 end
 
 # RANGES & INT
@@ -122,4 +124,3 @@ function read_con(con::SeisCon, keys::Array{String,1}, blocks::Integer;
                   prealloc_traces::Int = 50000)
     read_con(con, keys, [blocks], prealloc_traces = prealloc_traces)
 end
-
